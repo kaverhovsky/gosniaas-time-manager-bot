@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/bot"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/pkg/common"
 	"go.uber.org/zap"
@@ -10,8 +11,11 @@ import (
 )
 
 func main() {
+	configPath := flag.String("c", "", "config file path")
+	flag.Parse()
+
 	startUpLogger := common.NewLogger("development", "info")
-	config, err := common.ReadConfig(".env")
+	config, err := common.ReadConfig(*configPath, startUpLogger)
 	if err != nil {
 		startUpLogger.With(zap.String("reason", err.Error())).Error("failed config read")
 		return
