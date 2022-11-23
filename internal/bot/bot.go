@@ -56,6 +56,7 @@ func (b *Bot) RunForUpdates() {
 			}
 		case <-b.done:
 			b.logger.Info("canceling bot run for updates")
+			return
 		}
 	}
 

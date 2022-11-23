@@ -12,7 +12,7 @@ type Config struct {
 	Debug       bool   `envconfig:"DEBUG" default:"false" valid:"optional,type(bool)"`
 	Development bool   `envconfig:"DEVELOPMENT" default:"false" valid:"optional,type(bool)"`
 	LogLevel    string `envconfig:"LOGLEVEL" default:"info" valid:"in(debug|info|warning|error)"`
-	BotToken    string `envconfig:"BOT_TOKEN" valid:"required,string"`
+	BotToken    string `envconfig:"BOT_TOKEN" valid:"required,type(string)"`
 }
 
 // ReadConfig returns *Config with app configuration

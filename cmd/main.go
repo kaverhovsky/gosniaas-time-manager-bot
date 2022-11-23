@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -34,5 +35,6 @@ func main() {
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT)
 	<-sigs
 	bot.Shutdown()
+	time.Sleep(1 * time.Second)
 	logger.Info("service stopped")
 }
