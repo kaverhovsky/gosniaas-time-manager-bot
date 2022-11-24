@@ -3,7 +3,8 @@ package usecase
 import (
 	"errors"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain"
-	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/repository"
+	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day"
+	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day/repository"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/pkg/common"
 	"go.uber.org/zap"
 	"time"
@@ -53,22 +54,23 @@ func (u *Usecase) SaveEntrance(event *domain.Event) error {
 }
 
 func (u *Usecase) createDay(event *domain.Event) error {
-	//y, m, d := event.Datetime.Date()
-	//monthStr := m.String()
-	//day := &domain.DayRecord{
-	//	UID:         &event.UID,
-	//	Year:        &y,
-	//	Month:       &monthStr,
-	//	Day:         &d,
-	//	SumHours:    0,
-	//	FirstInTime: time.Now().UTC(),
-	//	LastOutTime: time.Time{},
+	y, m, d := event.Datetime.Date()
+	day := &day.DayRecord{
+		UID:         event.UID,
+		Year:        y,
+		Month:       m.String(),
+		Day:         d,
+		SumHours:    0,
+		FirstInTime: time.Now().UTC(),
+		LastOutTime: time.Time{},
 	}
 
 	err := u.repo.CreateDay(day)
 	if err != nil {
 		return err
 	}
+
+	u.repo.CreateDayItem()
 
 	return nil
 }
