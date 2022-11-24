@@ -1,9 +1,13 @@
 package usecase
 
 import (
+	"errors"
+	"fmt"
+	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/repository"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/pkg/common"
 	"go.uber.org/zap"
+	"time"
 )
 
 type Usecase struct {
@@ -20,6 +24,45 @@ func New(logger *zap.Logger, config *common.Config, repo repository.Repository) 
 	}
 }
 
-func Get() {
+func (u *Usecase) SaveEntrance(event *domain.Event) error {
+	// TODO ввести dto для верхнего уровня, в котором будет полный time.Time
+	y, m, d := event.Datetime.Date()
+	const dateLayout = "2006-01-02"
+	date, err := time.Parse(dateLayout, fmt.Sprintf("%d-%d-%d", y, m, d))
+	if err != nil {
+		return errors.New("can't parse date from event")
+	}
 
+	day, err := u.repo.GetDay(event.UID, date)
+	if err != nil {
+		return errors.New("failed getting day for UID and Date")
+	}
+
+	if day == nil {
+		if err := u.createDay(event); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if day.LastOutTime.After(event.Datetime) {
+		return errors.New("last Out time is after current In time")
+	}
+
+}
+
+func (u *Usecase) createDay(event *domain.Event) error {
+
+	day := &domain.Day{
+		UID:         event.UID,
+		Date:        event.Datetime,
+		SumHours:    0,
+		FirstInTime: time.Now().UTC(),
+		LastOutTime: time.Time{},
+	}
+	err := u.repo.CreateDay(day)
+	if err != nil {
+		return err
+	}
+	return nil
 }
