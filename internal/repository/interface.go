@@ -2,11 +2,10 @@ package repository
 
 import (
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain"
-	"time"
 )
 
 type Repository interface {
-	GetDay(int64, time.Time) (*domain.Day, error)
-	CreateDay(*domain.Day) error
-	UpdateDay(*domain.Day) error
+	GetDay(UID int64, year int, month string, day int) (*domain.DayRecord, error)
+	CreateDay(*domain.DayRecord) error
+	UpdateDay(*domain.DayRecord) error
 }
