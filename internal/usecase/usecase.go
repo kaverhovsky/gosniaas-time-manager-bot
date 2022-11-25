@@ -8,6 +8,7 @@ import (
 	day_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day/repository"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day_item"
 	day_item_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day_item/repository"
+	user_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/user/repository"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/pkg/common"
 	"go.uber.org/zap"
 	"time"
@@ -18,17 +19,20 @@ type Usecase struct {
 	config      *common.Config
 	dayRepo     day_repo.DayRepository
 	dayItemRepo day_item_repo.DayItemRepository
+	userRepo    user_repo.UserRepository
 }
 
 func New(logger *zap.Logger,
 	config *common.Config,
 	dayRepo day_repo.DayRepository,
-	dayItemRepo day_item_repo.DayItemRepository) *Usecase {
+	dayItemRepo day_item_repo.DayItemRepository,
+	userRepo user_repo.UserRepository) *Usecase {
 	return &Usecase{
 		logger:      logger,
 		config:      config,
 		dayRepo:     dayRepo,
 		dayItemRepo: dayItemRepo,
+		userRepo:    userRepo,
 	}
 }
 
@@ -128,4 +132,8 @@ func (u *Usecase) createDayItem(dayID uuid.UUID, event *domain.Event) error {
 		return err
 	}
 	return nil
+}
+
+func (u *Usecase) Report(uid int64) (*domain.Report, error) {
+	return &domain.Report{}, nil
 }
