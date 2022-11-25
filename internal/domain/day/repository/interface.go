@@ -6,7 +6,7 @@ import (
 
 type DayRepository interface {
 	Get(uID int64, year int, month string, day int) (*day.DayRecord, error)
-	GetMany(uID int64, year int, month string)
+	GetMany(uID int64, year int, month string) ([]*day.DayRecord, error)
 	Create(*day.DayRecord) error
 	Update(*day.DayRecord) error
 }

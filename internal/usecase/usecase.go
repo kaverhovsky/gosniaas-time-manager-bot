@@ -9,6 +9,7 @@ import (
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day_item"
 	day_item_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day_item/repository"
 	user_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/user/repository"
+	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/usecase/scheduler"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/pkg/common"
 	"go.uber.org/zap"
 	"time"
@@ -135,5 +136,32 @@ func (u *Usecase) createDayItem(dayID uuid.UUID, event *domain.Event) error {
 }
 
 func (u *Usecase) Report(uid int64) (*domain.Report, error) {
-	return &domain.Report{}, nil
+	user, err := u.userRepo.Get(uid)
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now()
+	year, month, _ := now.Date()
+	days, err := u.dayRepo.GetMany(user.ID, year, month.String())
+	if err != nil {
+		return nil, err
+	}
+
+	var sumHours time.Duration
+	for _, day := range days {
+		sumHoursForDay := day.LastOutTime.Sub(day.FirstInTime)
+		sumHours += sumHoursForDay
+	}
+
+	idealSumHours := scheduler.Get().GetSum(year, month)
+	diffHours := sumHours - idealSumHours
+	return &domain.Report{
+		Firstname:     user.Firstname,
+		Lastname:      user.Lastname,
+		Year:          year,
+		Month:         month.String(),
+		SumHours:      sumHours,
+		IdealSumHours: idealSumHours,
+		DiffHours:     diffHours,
+	}, nil
 }

@@ -5,7 +5,7 @@ import "time"
 type Report struct {
 	Firstname     string
 	Lastname      string
-	Year          string
+	Year          int
 	Month         string
 	SumHours      time.Duration
 	IdealSumHours time.Duration
