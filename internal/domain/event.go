@@ -2,7 +2,16 @@ package domain
 
 import "time"
 
-type EventType int
+type EventType string
+
+func (et EventType) String() string {
+	return string(et)
+}
+
+const (
+	Entrance EventType = "in"
+	Exit               = "out"
+)
 
 type Event struct {
 	UID      int64

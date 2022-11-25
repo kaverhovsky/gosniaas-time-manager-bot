@@ -7,6 +7,7 @@ import (
 
 type DayRecordItem struct {
 	ID       uuid.UUID
+	DayID    uuid.UUID
 	Type     string
 	Datetime time.Time
 }

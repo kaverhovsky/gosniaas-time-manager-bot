@@ -2,25 +2,33 @@ package usecase
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day"
-	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day/repository"
+	day_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day/repository"
+	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day_item"
+	day_item_repo "github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day_item/repository"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/pkg/common"
 	"go.uber.org/zap"
 	"time"
 )
 
 type Usecase struct {
-	logger *zap.Logger
-	config *common.Config
-	repo   repository.Repository
+	logger      *zap.Logger
+	config      *common.Config
+	dayRepo     day_repo.DayRepository
+	dayItemRepo day_item_repo.DayItemRepository
 }
 
-func New(logger *zap.Logger, config *common.Config, repo repository.Repository) *Usecase {
+func New(logger *zap.Logger,
+	config *common.Config,
+	dayRepo day_repo.DayRepository,
+	dayItemRepo day_item_repo.DayItemRepository) *Usecase {
 	return &Usecase{
-		logger: logger,
-		config: config,
-		repo:   repo,
+		logger:      logger,
+		config:      config,
+		dayRepo:     dayRepo,
+		dayItemRepo: dayItemRepo,
 	}
 }
 
@@ -33,44 +41,91 @@ func (u *Usecase) SaveEntrance(event *domain.Event) error {
 	//	return errors.New("can't parse date from event")
 	//}
 
-	day, err := u.repo.GetDay(event.UID, y, m.String(), d)
+	day, err := u.dayRepo.Get(event.UID, y, m.String(), d)
 	// TODO обрабатывать repo ошибку NotFound
 	if err != nil {
-		return errors.New("failed getting day for UID and Date")
+		u.logger.Error("failed getting day")
+		return err
 	}
 
 	if day == nil {
-		if err := u.createDay(event); err != nil {
+		id, err := u.createDay(event)
+		if err != nil {
+			u.logger.Error("failed creating day")
+			return err
+		}
+		if err = u.createDayItem(id, event); err != nil {
+			u.logger.Error("failed getting day item")
 			return err
 		}
 		return nil
 	}
 
-	if day.LastOutTime.IsZero() || day.LastOutTime.After(event.Datetime) {
-		// TODO возвращать ошибки с контекстом (инстансом), о котором идет речь
-		return errors.New("user had entered already that day")
-	}
+	//if day.LastOutTime.IsZero() || day.LastOutTime.After(event.Datetime) {
+	//	// TODO возвращать ошибки с контекстом (инстансом), о котором идет речь
+	//	return errors.New("user had entered already that day")
+	//}
 
+	if err = u.UpdateDay(day, event); err != nil {
+		u.logger.Error("failed updating day")
+		return err
+	}
+	if err = u.createDayItem(day.ID, event); err != nil {
+		u.logger.Error("failed getting day item")
+		return err
+	}
+	return nil
 }
 
-func (u *Usecase) createDay(event *domain.Event) error {
+func (u *Usecase) createDay(event *domain.Event) (uuid.UUID, error) {
 	y, m, d := event.Datetime.Date()
+	id := uuid.New()
 	day := &day.DayRecord{
-		UID:         event.UID,
-		Year:        y,
-		Month:       m.String(),
-		Day:         d,
-		SumHours:    0,
+		ID:    id,
+		UID:   event.UID,
+		Year:  y,
+		Month: m.String(),
+		Day:   d,
+		//SumHours:    0,
 		FirstInTime: time.Now().UTC(),
 		LastOutTime: time.Time{},
 	}
 
-	err := u.repo.CreateDay(day)
+	err := u.dayRepo.Create(day)
 	if err != nil {
+		return uuid.Nil, err
+	}
+	return id, nil
+}
+
+func (u *Usecase) UpdateDay(day *day.DayRecord, event *domain.Event) error {
+	if event.Type == domain.Entrance.String() {
+		if day.LastInTime.After(day.LastOutTime) {
+			return errors.New("double entrance occurred")
+		}
+		day.LastInTime = event.Datetime
+	} else {
+		if day.LastOutTime.After(day.LastInTime) {
+			return errors.New("double entrance occurred")
+		}
+		day.LastOutTime = event.Datetime
+	}
+	if err := u.dayRepo.Update(day); err != nil {
 		return err
 	}
+	return nil
+}
 
-	u.repo.CreateDayItem()
+func (u *Usecase) createDayItem(dayID uuid.UUID, event *domain.Event) error {
+	item := &day_item.DayRecordItem{
+		ID:       uuid.New(),
+		DayID:    dayID,
+		Type:     event.Type,
+		Datetime: event.Datetime,
+	}
 
+	if err := u.dayItemRepo.Create(item); err != nil {
+		return err
+	}
 	return nil
 }

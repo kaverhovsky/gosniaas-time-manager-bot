@@ -1,11 +1,12 @@
-package repository
+package day_repo
 
 import (
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain/day"
 )
 
-type Repository interface {
-	Get(UID int64, year int, month string, day int) (*day.DayRecord, error)
+type DayRepository interface {
+	Get(uID int64, year int, month string, day int) (*day.DayRecord, error)
+	GetMany(uID int64, year int, month string)
 	Create(*day.DayRecord) error
 	Update(*day.DayRecord) error
 }

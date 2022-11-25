@@ -1,7 +1,1 @@
-package repository
-
-type Repository interface {
-	Get()
-	GetMany()
-	Create()
-}
+package day_item_repo
