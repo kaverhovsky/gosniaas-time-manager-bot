@@ -50,11 +50,17 @@ func (sch *scheduler) init() error {
 }
 
 func (sch *scheduler) GetPeriod(now time.Time) *domain.Period {
-	//TODO implement me
-	panic("implement me")
+	for _, period := range sch.periods {
+		if period.Start.Before(now) && period.End.After(now) {
+			return period
+		}
+	}
+	return nil
 }
 
-func (sch *scheduler) SumForNow(now time.Time) time.Duration {
-	//TODO implement me
-	panic("implement me")
+func (sch *scheduler) SumForNow(now time.Time) (time.Duration, error) {
+	//period := sch.GetPeriod(now)
+	//ts := period.Start.Truncate()
+	//for ts = period.Start; !
+	return 0, nil
 }

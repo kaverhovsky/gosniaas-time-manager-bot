@@ -7,5 +7,5 @@ import (
 
 type Scheduler interface {
 	GetPeriod(now time.Time) *domain.Period
-	SumForNow(now time.Time) time.Duration
+	SumForNow(now time.Time) (time.Duration, error)
 }
