@@ -1,21 +1,19 @@
 package scheduler
 
 import (
-	"encoding/csv"
-	"errors"
 	"github.com/kaverhovsky/gosniias-time-manager-bot/internal/domain"
 	"go.uber.org/zap"
-	"os"
 	"time"
 )
 
 const (
 	durationsFilename = "durations.csv"
-	layout            = ""
+	periodsFilename   = "periods.csv"
 )
 
 type scheduler struct {
 	durations map[int64]time.Duration
+	periods   []*domain.Period
 	logger    *zap.Logger
 }
 
@@ -37,34 +35,16 @@ func New(logger *zap.Logger) *scheduler {
 
 func (sch *scheduler) init() error {
 	// TODO добавить логи
-	f, err := os.Open(durationsFilename)
+	durations, err := durationsFromCSV(durationsFilename)
 	if err != nil {
 		return err
 	}
-	r := csv.NewReader(f)
-	rows, err := r.ReadAll()
+	periods, err := periodsFromCSV(durationsFilename)
 	if err != nil {
 		return err
 	}
-	for _, row := range rows {
-		if len(row) != 2 {
-			return errors.New("wrong row format in \"durations\" file")
-		}
-
-		datetime, err := time.Parse(layout, row[0])
-		if err != nil {
-			// TODO обернуть ошибку
-			return err
-		}
-
-		// add record to scheduler's durations
-		dur, err := time.ParseDuration(row[1])
-		if err != nil {
-			// TODO обернуть ошибку
-			return err
-		}
-		sch.durations[datetime.Unix()] = dur
-	}
+	sch.durations = durations
+	sch.periods = periods
 
 	return nil
 }
