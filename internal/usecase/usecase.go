@@ -141,25 +141,28 @@ func (u *Usecase) Report(uid int64) (*domain.Report, error) {
 		return nil, err
 	}
 	now := time.Now()
-	year, month, _ := now.Date()
-	days, err := u.dayRepo.GetMany(user.ID, year, month.String())
+	period := scheduler.Get().GetPeriod(now)
+	// or GetMany(user.ID, period.Start, now)
+	days, err := u.dayRepo.GetMany(user.ID, period.Start, period.End)
 	if err != nil {
 		return nil, err
 	}
 
+	// get actual sum of working hours
 	var sumHours time.Duration
 	for _, day := range days {
 		sumHoursForDay := day.LastOutTime.Sub(day.FirstInTime)
 		sumHours += sumHoursForDay
 	}
 
-	idealSumHours := scheduler.Get().GetSum(year, month)
+	// get ideal sum of working hours
+	idealSumHours := scheduler.Get().SumForNow(now)
 	diffHours := sumHours - idealSumHours
 	return &domain.Report{
 		Firstname:     user.Firstname,
 		Lastname:      user.Lastname,
-		Year:          year,
-		Month:         month.String(),
+		Year:          now.Year(),
+		Month:         now.Month().String(),
 		SumHours:      sumHours,
 		IdealSumHours: idealSumHours,
 		DiffHours:     diffHours,
